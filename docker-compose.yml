@@ -50,3 +50,75 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     restart: on-failure
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: grafana
+    ports:
+      - "3001:3001"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-worldmap-panel,grafana-piechart-panel
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    restart: on-failure
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-storage:/data
+    command: server /data --console-address ":9001"
+    restart: on-failure
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_DB: iot-analytics
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: admin
+      INFLUXDB_USER: iot
+      INFLUXDB_USER_PASSWORD: iot
+    volumes:
+      - influxdb-storage:/var/lib/influxdb2
+    restart: on-failure
+
+  # service-analytics:
+  #   build:
+  #     context: ./service-analytics
+  #     dockerfile: Dockerfile
+  #   container_name: service-analytics
+  #   depends_on:
+  #     - kafka
+  #     - minio
+  #     - influxdb
+  #     - grafana
+  #   environment:
+  #     MINIO_ENDPOINT: http://minio:9000
+  #     MINIO_ACCESS_KEY: minioadmin
+  #     MINIO_SECRET_KEY: minioadmin
+  #     MINIO_BUCKET: iot-events
+  #     INFLUXDB_URL: http://influxdb:8086
+  #     INFLUXDB_TOKEN: admin-token
+  #     INFLUXDB_ORG: iot-org
+  #     INFLUXDB_BUCKET: iot-analytics
+  #     GRAFANA_URL: http://grafana:3000
+  #     GRAFANA_API_KEY: admin
+  #   restart: on-failure
+
+volumes:
+  grafana-storage:
+    driver: local
+  minio-storage:
+    driver: local
+  influxdb-storage:
+    driver: local
