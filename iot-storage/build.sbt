@@ -1,6 +1,7 @@
 name := "iot-storage"
 
 scalaVersion := "2.13.12"
+val sparkVersion = "3.5.1"
 
 libraryDependencies ++= Seq(
   "org.apache.kafka" %% "kafka" % "3.5.1",
@@ -19,4 +20,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.4",
     // Configuration
   "com.typesafe" % "config" % "1.4.3",
+  "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion,
+  "org.apache.hadoop" % "hadoop-client-api" % "3.3.4"
 )
