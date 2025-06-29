@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fermentation Analytics Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    h1 { margin-bottom: 20px; }
+    .chart-container { margin-bottom: 60px; }
+  </style>
+</head>
+<body>
+  <h1>Fermentation Analytics Dashboard</h1>
+
+  <div class="chart-container">
+    <h2>1. Fermenters by Alerts (Count)</h2>
+    <div id="fermentersByAlerts"></div>
+  </div>
+
+  <div class="chart-container">
+    <h2>2. Alerts by Location</h2>
+    <div id="alertsByLocation"></div>
+  </div>
+
+  <div class="chart-container">
+    <h2>3. Fermenters with Least Humidity Variation</h2>
+    <div id="leastVariation"></div>
+  </div>
+
+  <div class="chart-container">
+    <h2>4. Average Environmental Metrics</h2>
+    <div id="environmentalAverages"></div>
+  </div>
+
+  <script>
+    // Helper to load CSV file and parse it with PapaParse
+    function loadCSV(path) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(path, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          complete: results => resolve(results.data),
+          error: err => reject(err)
+        });
+      });
+    }
+
+    // 1. Fermenters by Alerts
+    loadCSV('output/fermenters_by_alerts/fermenters_by_alerts.csv').then(data => {
+      const devices = data.map(d => d.device_id);
+      const counts = data.map(d => d.count);
+
+      const trace = {
+        x: devices,
+        y: counts,
+        type: 'bar',
+        marker: {color: 'orange'}
+      };
+
+      Plotly.newPlot('fermentersByAlerts', [trace], {margin: {t: 30}});
+    }).catch(console.error);
+
+    // 2. Alerts by Location
+    loadCSV('output/alerts_by_location/alerts_by_location.csv').then(data => {
+      const lat = data.map(d => parseFloat(d['location.lat'] || d.lat || 0));
+      const lon = data.map(d => parseFloat(d['location.lon'] || d.lon || 0));
+      const counts = data.map(d => d.count);
+
+      const trace = {
+        type: 'scattergeo',
+        mode: 'markers',
+        text: counts.map(c => `Alerts: ${c}`),
+        lon: lon,
+        lat: lat,
+        marker: {
+          size: counts.map(c => Math.sqrt(c) * 5),
+          color: 'red',
+          opacity: 0.7,
+        }
+      };
+
+      const layout = {
+        geo: {
+          scope: 'world',
+          projection: {type: 'equirectangular'},
+          showland: true,
+          landcolor: 'rgb(217, 217, 217)',
+        },
+        margin: {t: 30}
+      };
+
+      Plotly.newPlot('alertsByLocation', [trace], layout);
+    }).catch(console.error);
+
+    // 3. Fermenters with Least Variation
+    loadCSV('output/least_variations/least_variations.csv').then(data => {
+      const devices = data.map(d => d.device_id);
+      const variation = data.map(d => d.stddev_humidity);
+
+      const trace = {
+        x: devices,
+        y: variation,
+        type: 'bar',
+        marker: {color: 'green'}
+      };
+
+      Plotly.newPlot('leastVariation', [trace], {margin: {t: 30}});
+    }).catch(console.error);
+
+    // 4. Environmental Averages
+    loadCSV('output/means/means.csv').then(data => {
+      const avg = data[0];
+      const metrics = ['avg_temperature', 'avg_humidity', 'avg_tank_level'];
+      const values = metrics.map(m => avg[m]);
+
+      const trace = {
+        x: metrics.map(m => m.replace('avg_', '').replace('_', ' ').toUpperCase()),
+        y: values,
+        type: 'bar',
+        marker: {color: 'blue'}
+      };
+
+      Plotly.newPlot('environmentalAverages', [trace], {margin: {t: 30}});
+    }).catch(console.error);
+  </script>
+</body>
+</html>
