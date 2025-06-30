@@ -26,4 +26,4 @@ lazy val serviceAnalytics = project.in(file("service-analytics"))
   )
 
 lazy val root = (project in file("."))
-  .aggregate(iotSimulator, alertSelector, alertHandler, iotStorage, sparkAnalyzer)
+  .aggregate(iotSimulator, alertSelector, alertHandler, iotStorage)

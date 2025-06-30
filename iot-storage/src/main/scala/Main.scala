@@ -72,18 +72,18 @@ object MinioWriter {
 
     println("Transformation complete. Writing to MinIO...")
 
-    // val query = transformedDf.writeStream
-    //   .format("parquet")
-    //   .option("path", "s3a://your-bucket/drone-data/")
-    //   .option("checkpointLocation", "/tmp/spark-checkpoint/")
-    //   .outputMode("append")
-    //   .start()
-    
-    val query = parsedDf.writeStream
-      .format("console")
-      .option("checkpointLocation", "/tmp/spark-checkpoint/iot-events")
+    val query = transformedDf.writeStream
+      .format("json")
+      .option("path", "s3a://iot-events/iot-events/")
+      .option("checkpointLocation", "/tmp/spark-checkpoint/")
       .outputMode("append")
       .start()
+    
+    //val query = parsedDf.writeStream
+    //  .format("console")
+    //  .option("checkpointLocation", "/tmp/spark-checkpoint/iot-events")
+    //  .outputMode("append")
+    //  .start()
 
 
     println("WriteStream started successfully. Waiting for termination...")
@@ -111,8 +111,6 @@ object Main extends App {
     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
     .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
     .getOrCreate()
-
-  spark.sparkContext.setLogLevel("WARN")
 
   println("Starting IoTEvent consumer and writer to MinIO...")
 
