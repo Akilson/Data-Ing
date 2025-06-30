@@ -11,11 +11,12 @@ import sttp.client3._
 import sttp.client3.playJson._
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import scala.util.{Try, Success, Failure}
+import scala.util.{Try, Success, Failure, Using}
 import scala.concurrent.duration._
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import java.nio.file.{Files, Paths}
+
 // logger
 
 
@@ -140,21 +141,26 @@ def mergeCSVFiles(inputDir: String, outputFile: String): Unit = {
 
     val writer = new PrintWriter(new File(outputFile))
 
-    try {
-        // Read header from the first file
-        val firstFile = csvFiles.head
-        val header = Source.fromFile(firstFile).getLines().take(1).toList.head
-        writer.println(header)
-
-        // Append all lines except header from each CSV
-        csvFiles.foreach { file =>
-        val lines = Source.fromFile(file).getLines().drop(1) // drop header
-        lines.foreach(writer.println)
-        }
-        println(s"Successfully merged ${csvFiles.size} CSV files into $outputFile")
-    } finally {
-        writer.close()
+  // Merging CSVs without try-catch
+  Using(new PrintWriter(outputFile)) { writer =>
+    // Read header from the first file
+    val firstFile = csvFiles.head
+    val header = Using.resource(Source.fromFile(firstFile)) { source =>
+      source.getLines().take(1).toList.head
     }
+
+    writer.println(header)
+
+  // Append all lines except header from each CSV
+    csvFiles.foreach { file =>
+      Using.resource(Source.fromFile(file)) { source =>
+        val lines = source.getLines().drop(1) // drop header
+        lines.foreach(writer.println)
+      }
+  }
+
+  println(s"Successfully merged ${csvFiles.size} CSV files into $outputFile")
+}
     }
 
     val spark = ServiceAnalytics.createSparkSession()
@@ -168,10 +174,30 @@ def mergeCSVFiles(inputDir: String, outputFile: String): Unit = {
     
     println(s"Loaded ${doudou.count()} events from Minio")
     // show the first 5 rows in a file
-    val df = doudou
+    // extract value field from the object
+    val parsedDF = doudou
+  .withColumn("value_json", from_json(col("value"), StructType(Seq(
+    StructField("deviceId", StringType),
+    StructField("timestamp", StringType),
+    StructField("location", StructType(Seq(
+      StructField("lat", DoubleType),
+      StructField("lon", DoubleType)
+    ))),
+    StructField("temperature", DoubleType),
+    StructField("humidity", DoubleType),
+    StructField("tankLevel", IntegerType)
+  ))))
+  .select("value_json.*") // Get the nested fields directly
+  .withColumnRenamed("deviceId", "device_id")
+
+    // save the parsed DataFrame to a CSV file named "parsed_iot_events.csv"
+
+    val df = parsedDF
     .withColumn("lat", col("location.lat"))
     .withColumn("lon", col("location.lon"))
     .drop("location")
+    
+    df.write.mode("overwrite").option("header", "true").csv("parsed_iot_events.csv")
 
     // flattenedDF
     //     .coalesce(1) // reduce to a single partition (single output file)
