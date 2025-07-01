@@ -16,11 +16,11 @@ lazy val iotSimulator = project.in(file("iot-simulator"))
       "com.typesafe" % "config" % "1.4.3"
     )
   )
-// lazy val alertSelector  = project.in(file("alert-selector")).settings(commonSettings)
+lazy val alertSelector  = project.in(file("alert-selector")).settings(commonSettings)
 // lazy val alertHandler   = project.in(file("alert-handler")).settings(commonSettings)
 // lazy val iotStorage   = project.in(file("iot-storage")).settings(commonSettings)
 // lazy val sparkAnalyzer  = project.in(file("spark-analyzer")).settings(commonSettings)
 
 lazy val root = (project in file("."))
-  .aggregate(iotSimulator)//, alertSelector, alertHandler, iotStorage, sparkAnalyzer)
+  .aggregate(iotSimulator, alertSelector)//, alertSelector, alertHandler, iotStorage, sparkAnalyzer)
   .settings(commonSettings)

@@ -100,7 +100,7 @@ object Main extends App {
             } else {
               eventCount += 1
               if (eventCount % 10 == 0) {
-                println(s"Successfully sent $eventCount events. Latest: ${event.deviceId} - Temp: ${event.temperature}°C")
+                println(s"Successfully sent $eventCount events. Latest: ${event.deviceId} - Temp: ${event.temperature}°C - Tank Level: ${event.tankLevel}%)")
               }
             }
           })
