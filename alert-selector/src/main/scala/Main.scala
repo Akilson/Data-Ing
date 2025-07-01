@@ -10,8 +10,10 @@ import io.circe.parser.parse
 object Main extends App {
   println("Alert Selector started")
 
-  val inputTopic = "iot_events"
-  val outputTopic = "alerts"
+  val inputTopic = "iot-events"
+  val outputTopicSev1 = "alerts-sev1"
+  val outputTopicSev2 = "alerts-sev2"
+  val outputTopicSev3 = "alerts-sev3"
   
   // Consumer Setup
   val consumerProps: Properties = new Properties()
@@ -36,12 +38,31 @@ object Main extends App {
     parse(jsonStr).toOption.flatMap { json =>
       val cursor = json.hcursor
       val temp = cursor.get[Double]("temperature").toOption
-      val level = cursor.get[Int]("tank_level").toOption
-      (temp, level) match {
-        case (Some(t), Some(l)) => Some(t > 30.0 || l < 20)
+      val level = cursor.get[Int]("tankLevel").toOption
+      val humidity = cursor.get[Double]("humidity").toOption
+      (temp, level, humidity) match {
+        case (Some(t), Some(l), Some(h)) => Some(t > 30.0 || l < 35 || h > 65.0)
         case _ => Some(false)
       }
     }.getOrElse(false)
+  }
+
+  def Severity(jsonStr: String): String = {
+    parse(jsonStr).toOption.flatMap { json =>
+      val cursor = json.hcursor
+      val temp = cursor.get[Double]("temperature").toOption
+      val level = cursor.get[Int]("tankLevel").toOption
+      val humidity = cursor.get[Double]("humidity").toOption
+      (temp, level, humidity) match {
+        case (Some(t), Some(l), Some(h)) => (t, l, h) match {
+          case (t, l, h) if t > 34.0 || l < 15 || h > 75.0 => Some(outputTopicSev1)
+          case (t, l, h) if t > 32.5 || l < 25 || h > 70.0 => Some(outputTopicSev2)
+          case _ => Some(outputTopicSev3)
+        }
+        // Should never enter in this case
+        case _ => Some(outputTopicSev3)
+      }
+    }.getOrElse(outputTopicSev3)
   }
 
   println("Starting alert processor...")
@@ -50,7 +71,8 @@ object Main extends App {
     val records = consumer.poll(Duration.ofMillis(100))
     records.asScala.foreach { record =>
       if (isAlert(record.value())) {
-        val outRecord = new ProducerRecord[String, String](outputTopic, record.key(), record.value())
+        val severityTopic = Severity(record.value())
+        val outRecord = new ProducerRecord[String, String](severityTopic, record.key(), record.value())
         producer.send(outRecord, (metadata, exception) => {
           if (exception != null) {
             println(s"Error sending alert: ${exception.getMessage}")
