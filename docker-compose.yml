@@ -78,6 +78,19 @@ services:
       - minio-storage:/data
     command: server /data --console-address ":9001"
     restart: on-failure
+  
+  createbucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb local/iot-events;
+      mc policy set public local/iot-events;
+      exit 0;
+      "
 
   influxdb:
     image: influxdb:2.7
