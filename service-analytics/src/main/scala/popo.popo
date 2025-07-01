@@ -1,0 +1,48 @@
+import org.apache.spark.sql.{SparkSession, SaveMode}
+import java.nio.file.{Files, Paths}
+import java.nio.charset.StandardCharsets
+
+object Main extends App {
+  val spark = SparkSession.builder()
+    .appName("IoT Analytics Service")
+    .master("local[1]") 
+    .getOrCreate()
+
+  println("Spark session created successfully!")
+
+  // Create a small CSV file for testing
+  val testCsvPath = "test_input.csv"
+  val csvContent =
+    """id,name,value
+      |1,Alice,10
+      |2,Bob,20
+      |3,Charlie,30
+      |""".stripMargin
+
+  Files.write(Paths.get(testCsvPath), csvContent.getBytes(StandardCharsets.UTF_8))
+
+  // Read CSV file
+  val df = spark.read
+    .option("header", "true")
+    .option("inferSchema", "true")
+    .csv(testCsvPath)
+
+  println("Input DataFrame:")
+  df.show()
+
+  // Simple transformation: add a new column "value_plus_10"
+  val df2 = df.withColumn("value_plus_10", df("value") + 10)
+
+  println("Transformed DataFrame:")
+  df2.show()
+
+  // Write transformed DataFrame to a new CSV
+  val outputDir = "test_output"
+  df2.write.mode(SaveMode.Overwrite).option("header", "true").csv(outputDir)
+
+  println(s"Data written to $outputDir")
+
+  // Cleanup: stop Spark
+  spark.stop()
+  println("Spark session stopped gracefully.")
+}
