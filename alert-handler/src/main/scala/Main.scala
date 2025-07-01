@@ -16,15 +16,16 @@ object Main extends App {
   println("Alert handler started")
 
   object SmsSender {
-    val accountSid = "AC971b8e3db9f34f829879fcc2ba608aab"     // or hardcode for now
-    val authToken = "5d1aa3d5efb7aa7869547f4da7e5f22c"        // or hardcode
-    val fromNumber = "+12518508296"                     // Your Twilio number
+    val accountSid = sys.env("TWILIO_ACCOUNT_SID")     // or hardcode for now
+    val authToken = sys.env("TWILIO_AUTH_TOKEN")        // or hardcode
+    val fromNumber = sys.env("TWILIO_PHONE_NUMBER")                     // Your Twilio number
+    val toNumber = sys.env("RECIPIENT_PHONE_NUMBER")
 
-    def sendSms(to: String, body: String): Unit = {
+    def sendSms(body: String): Unit = {
       Twilio.init(accountSid, authToken)
       val message = Message
         .creator(
-          new PhoneNumber(to),
+          new PhoneNumber(toNumber),
           new PhoneNumber(fromNumber),
           body
         )
@@ -33,7 +34,7 @@ object Main extends App {
       println(s"✅ SMS sent! SID: ${message.getSid}")
     }
   }
-  // SmsSender.sendSms("+33644777142", "beginning of handler")
+  SmsSender.sendSms("Alert handler started") // Initial message to confirm Twilio setup
   object DiscordNotifierSev2 {
 
     // Replace with your Discord webhook URL
@@ -130,7 +131,7 @@ object Main extends App {
           println(s"Received SEV1 alert but could not parse: ${record.value()}")
           return
         }
-        SmsSender.sendSms("+33644777142", messageToSend) // Replace with actual phone number
+        SmsSender.sendSms(messageToSend) // Replace with actual phone number
         println(s"Received SEV1 alert: ${record.value()}")
       } else if (record.topic() == inputTopicSev2) {
         val messageToSend = "Alert: " + smsForSev23(record.value())
