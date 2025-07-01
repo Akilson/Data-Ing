@@ -1,4 +1,4 @@
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.StringSerializer
 import play.api.libs.json._
 import scala.util.{Random, Try, Success, Failure}
@@ -80,53 +80,43 @@ object Main extends App {
 
   val topicName = "iot-events"
 
-  // Try to create producer with better error handling
-  Try(new KafkaProducer[String, String](props)) match {
-    case Success(producer) =>
-      println(s"Successfully connected to Kafka. Publishing IoT events to topic: $topicName")
-      
-      try {
-        var eventCount = 0
-        while (true) {
-          // Generate and send an IoT event
-          val event = IoTSimulator.generateEvent()
-          val eventJson = Json.toJson(event).toString()
-          val record = new ProducerRecord[String, String](topicName, event.deviceId, eventJson)
-          
-          // Send with callback for better error handling
-          producer.send(record, (metadata, exception) => {
-            if (exception != null) {
-              println(s"Failed to send event: ${exception.getMessage}")
-            } else {
-              eventCount += 1
-              if (eventCount % 10 == 0) {
-                println(s"Successfully sent $eventCount events. Latest: ${event.deviceId} - Temp: ${event.temperature}°C - Tank Level: ${event.tankLevel}%)")
-              }
+  val kafkaProducerOption = 
+    if (bootstrapServers.nonEmpty) Some(new KafkaProducer[String, String](props)) else None
+
+  kafkaProducerOption.foreach { producer =>
+    println(s"Successfully connected to Kafka. Publishing IoT events to topic: $topicName")
+
+    val eventStream: LazyList[IoTEvent] = LazyList.continually(IoTSimulator.generateEvent())
+
+    def sendEvents(events: LazyList[IoTEvent], sentCount: Int): Unit = {
+      events.headOption.foreach { event =>
+        val eventJson = Json.toJson(event).toString()
+        val record = new ProducerRecord[String, String](topicName, event.deviceId, eventJson)
+
+        producer.send(record, (metadata: RecordMetadata, exception: Exception) => {
+          if (exception != null) {
+            println(s"Failed to send event: ${exception.getMessage}")
+          } else {
+            val newCount = sentCount + 1
+            if (newCount % 10 == 0) {
+              println(s"Successfully sent $newCount events. Latest: ${event.deviceId} - Temp: ${event.temperature}°C - Tank Level: ${event.tankLevel}%)")
             }
-          })
-          
-          // Wait 1-3 seconds before next event
-          val random = new Random()
-          Thread.sleep(1000 + random.nextInt(2000))
-        }
-      } catch {
-        case e: InterruptedException =>
-          println("Simulator interrupted. Shutting down gracefully...")
-        case e: Exception =>
-          println(s"Error in IoT Simulator: ${e.getMessage}")
-          e.printStackTrace()
-      } finally {
-        println("Closing Kafka producer...")
-        producer.close()
-        println("IoT Simulator shut down.")
+          }
+        })
+
+        Thread.sleep(1000 + new Random().nextInt(2000))
+        sendEvents(events.tail, sentCount + 1)
       }
-      
-    case Failure(exception) =>
-      println(s"Failed to create Kafka producer: ${exception.getMessage}")
-      println("\nTroubleshooting steps:")
-      println("1. Make sure Kafka is running on the specified address")
-      println("2. If using Docker, ensure the container is running and ports are exposed")
-      println("3. Check network connectivity to the Kafka broker")
-      println(s"4. Current bootstrap servers: $bootstrapServers")
+    }
+
+    sendEvents(eventStream, 0)
+
+    println("Closing Kafka producer...")
+    producer.close()
+    println("IoT Simulator shut down.")
+  }
+
+  if (kafkaProducerOption.isEmpty) {
+    println("Kafka bootstrap servers not specified or empty, cannot create producer.")
   }
 }

@@ -1,0 +1,8 @@
+#! /bin/bash
+
+export TWILIO_ACCOUNT_SID="REPLACE_ME"
+export TWILIO_AUTH_TOKEN="REPLACE_ME"
+export TWILIO_PHONE_NUMBER="REPLACE_ME"
+export RECIPIENT_PHONE_NUMBER="REPLACE_ME"
+
+sbt "project alertHandler" run
