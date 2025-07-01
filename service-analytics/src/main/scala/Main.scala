@@ -116,80 +116,78 @@ object ServiceAnalytics extends LazyLogging {
   }
 
   // 1. Device Health Analysis
-  // def analyzeDeviceHealth(df: DataFrame): DataFrame = {
-  //   logger.info("Analyzing device health metrics...")
-    
-  //   df.groupBy("device_id")
-  //     .agg(
-  //       avg("temperature").alias("avg_temperature"),
-  //       avg("humidity").alias("avg_humidity"),
-  //       avg("tank_level").alias("avg_tank_level"),
-  //       variance("temperature").alias("temperature_variance"),
-  //       variance("humidity").alias("humidity_variance"),
-  //       count("*").alias("reading_count")
-  //     )
-  //     .withColumn("health_score", 
-  //       when(col("temperature_variance") > 10 || col("humidity_variance") > 100, 0.3)
-  //       .when(col("avg_temperature") < 20 || col("avg_temperature") > 35, 0.5)
-  //       .when(col("avg_humidity") < 40 || col("avg_humidity") > 80, 0.6)
-  //       .when(col("avg_tank_level") < 20, 0.4)
-  //       .otherwise(0.9)
-  //     )
-  //     .withColumn("alert_level",
-  //       when(col("health_score") < 0.5, "CRITICAL")
-  //       .when(col("health_score") < 0.7, "WARNING")
-  //       .otherwise("HEALTHY")
-  //     )
-  // }
-
-  // 2. Geographic Distribution Analysis
-  // def analyzeGeographicDistribution(df: DataFrame): DataFrame = {
-  //   logger.info("Analyzing geographic distribution...")
-    
-  //   df.withColumn("lat_bucket", round(col("location.lat"), 1))
-  //     .withColumn("lon_bucket", round(col("location.lon"), 1))
-  //     .withColumn("region", concat(col("lat_bucket"), lit(","), col("lon_bucket")))
-  //     .groupBy("region", "lat_bucket", "lon_bucket")
-  //     .agg(
-  //       countDistinct("device_id").alias("device_count"),
-  //       avg("temperature").alias("avg_temperature"),
-  //       avg("humidity").alias("avg_humidity"),
-  //       min("temperature").alias("min_temperature"),
-  //       max("temperature").alias("max_temperature")
-  //     )
-  //     .withColumn("lat_range", concat(col("lat_bucket"), lit("±0.05")))
-  //     .withColumn("lon_range", concat(col("lon_bucket"), lit("±0.05")))
-  // }
+    def analyzeDeviceHealth(df: DataFrame): DataFrame = {
+    logger.info("Analyzing device health metrics...")
+        df.groupBy("device_id")
+        .agg(
+        avg("temperature").alias("avg_temperature"),
+        avg("humidity").alias("avg_humidity"),
+        avg("tank_level").alias("avg_tank_level"),
+        variance("temperature").alias("temperature_variance"),
+        variance("humidity").alias("humidity_variance"),
+        count("*").alias("reading_count")
+        )
+        .withColumn("health_score", 
+        when(col("temperature_variance") > 10 || col("humidity_variance") > 100, 0.3)
+        .when(col("avg_temperature") < 20 || col("avg_temperature") > 35, 0.5)
+        .when(col("avg_humidity") < 40 || col("avg_humidity") > 80, 0.6)
+        .when(col("avg_tank_level") < 20, 0.4)
+        .otherwise(0.9)
+        )
+        .withColumn("alert_level",
+        when(col("health_score") < 0.5, "CRITICAL")
+        .when(col("health_score") < 0.7, "WARNING")
+        .otherwise("HEALTHY")
+        )
+    }  
+    // 2. Geographic Distribution Analysis
+  def analyzeGeographicDistribution(df: DataFrame): DataFrame = {
+    logger.info("Analyzing geographic distribution...")
+  
+    df.withColumn("lat_bucket", round(col("lat"), 1))
+      .withColumn("lon_bucket", round(col("lon"), 1))
+      .withColumn("region", concat(col("lat_bucket"), lit(","), col("lon_bucket")))
+      .groupBy("region", "lat_bucket", "lon_bucket")
+      .agg(
+        countDistinct("device_id").alias("device_count"),
+        avg("temperature").alias("avg_temperature"),
+        avg("humidity").alias("avg_humidity"),
+        min("temperature").alias("min_temperature"),
+        max("temperature").alias("max_temperature")
+      )
+      .withColumn("lat_range", concat(col("lat_bucket"), lit("±0.05")))
+      .withColumn("lon_range", concat(col("lon_bucket"), lit("±0.05")))
+  }
 
   // 3. Tank Level Analytics
-  // def analyzeTankLevels(df: DataFrame): DataFrame = {
-  //   logger.info("Analyzing tank levels and consumption patterns...")
-    
-  //   val windowSpec = Window.partitionBy("device_id").orderBy("timestamp")
-    
-  //   df.withColumn("timestamp_unix", unix_timestamp(col("timestamp")))
-  //     .withColumn("prev_level", lag("tank_level", 1).over(windowSpec))
-  //     .withColumn("prev_timestamp", lag("timestamp_unix", 1).over(windowSpec))
-  //     .withColumn("level_change", col("tank_level") - col("prev_level"))
-  //     .withColumn("time_diff_hours", (col("timestamp_unix") - col("prev_timestamp")) / 3600)
-  //     .filter(col("level_change") < 0) // Only consumption (negative changes)
-  //     .groupBy("device_id")
-  //     .agg(
-  //       last("tank_level").alias("current_level"),
-  //       avg(col("level_change") / col("time_diff_hours")).alias("consumption_rate_per_hour")
-  //     )
-  //     .withColumn("days_remaining", 
-  //       when(col("consumption_rate_per_hour") < 0, 
-  //         col("current_level") / abs(col("consumption_rate_per_hour")) / 24)
-  //       .otherwise(999)
-  //     )
-  //     .withColumn("refill_priority",
-  //       when(col("days_remaining") < 1, "URGENT")
-  //       .when(col("days_remaining") < 3, "HIGH")
-  //       .when(col("days_remaining") < 7, "MEDIUM")
-  //       .otherwise("LOW")
-  //     )
-  // }
+   def analyzeTankLevels(df: DataFrame): DataFrame = {
+     logger.info("Analyzing tank levels and consumption patterns...")
+  
+     val windowSpec = Window.partitionBy("device_id").orderBy("timestamp")
+  
+     df.withColumn("timestamp_unix", unix_timestamp(col("timestamp")))
+       .withColumn("prev_level", lag("tank_level", 1).over(windowSpec))
+       .withColumn("prev_timestamp", lag("timestamp_unix", 1).over(windowSpec))
+       .withColumn("level_change", col("tank_level") - col("prev_level"))
+       .withColumn("time_diff_hours", (col("timestamp_unix") - col("prev_timestamp")) / 3600)
+       .filter(col("level_change") < 0) // Only consumption (negative changes)
+       .groupBy("device_id")
+       .agg(
+         last("tank_level").alias("current_level"),
+         avg(col("level_change") / col("time_diff_hours")).alias("consumption_rate_per_hour")
+       )
+       .withColumn("days_remaining", 
+         when(col("consumption_rate_per_hour") < 0, 
+           col("current_level") / abs(col("consumption_rate_per_hour")) / 24)
+         .otherwise(999)
+       )
+       .withColumn("refill_priority",
+         when(col("days_remaining") < 1, "URGENT")
+         .when(col("days_remaining") < 3, "HIGH")
+         .when(col("days_remaining") < 7, "MEDIUM")
+         .otherwise("LOW")
+       )
+   }
 
   // 4. Temporal Trends Analysis
     def analyzeTemporalTrends(df: DataFrame): DataFrame = {
@@ -384,8 +382,8 @@ object Main extends App {
     //     .csv("output_single_file")
 
     // write to influxDB
-    ServiceAnalytics.writeToInfluxDB(flattenedDF, "iot_events")
-    println("Data written to InfluxDB measurement: iot_events")
+    ServiceAnalytics.writeToInfluxDB(flattenedDF, "iot-analytics")
+    println("Data written to InfluxDB measurement: iot-analytics")
 
     // analyze temporal trends
     val temporalTrendsDF = ServiceAnalytics.analyzeTemporalTrends(flattenedDF)
@@ -393,11 +391,32 @@ object Main extends App {
     // write temporal trends to influxDB
     ServiceAnalytics.writeToInfluxDB(temporalTrendsDF, "temporal_trends")
 
+    val deviceHealthDF = ServiceAnalytics.analyzeDeviceHealth(flattenedDF)
+    println("Device health analysis completed.")
+    // write device health to influxDB
+    ServiceAnalytics.writeToInfluxDB(deviceHealthDF, "device_health")
+    println("Device health data written to InfluxDB measurement: device_health")
+
+    val geographicMetricsDF = ServiceAnalytics.analyzeGeographicDistribution(flattenedDF)
+    println("Geographic distribution analysis completed.")
+    // write geographic distribution to influxDB
+    ServiceAnalytics.writeToInfluxDB(geographicMetricsDF, "geographic_metrics")
+    println("Geographic metrics data written to InfluxDB measurement: geographic_metrics")
+
+    val tankAnalyticsDF = ServiceAnalytics.analyzeTankLevels(flattenedDF)
+    println("Tank level analysis completed.")
+    // write tank analytics to influxDB
+    ServiceAnalytics.writeToInfluxDB(tankAnalyticsDF, "tank_analytics")
+    println("Tank analytics data written to InfluxDB measurement: tank_analytics")
+    // write temporal trends to influxDB
+    ServiceAnalytics.writeToInfluxDB(temporalTrendsDF, "temporal_trends")
+    // println("Temporal trends data written to InfluxDB measurement: temporal_trends")
+
     println("Temporal trends data written to InfluxDB measurement: temporal_trends")
     // create a Grafana dashboard
     // ServiceAnalytics.createGrafanaDashboard()
     // println("Grafana dashboard created successfully.")
-    
+
 
     // stop the Spark session
     spark.stop()
