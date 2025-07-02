@@ -42,16 +42,40 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
 
-  # iot-simulator:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: iot-simulator
-  #   depends_on:
-  #     - kafka
-  #   environment:
-  #     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-  #   restart: on-failure
+  iot-simulator:
+    build:
+      context: .
+      dockerfile: iot-simulator/Dockerfile
+    container_name: iot-simulator
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    restart: on-failure
+
+  alert-selector:
+   build:
+     context: .
+     dockerfile: alert-selector/Dockerfile
+   container_name: alert-selector
+   depends_on:
+     - kafka
+     - iot-simulator
+   environment:
+     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+   restart: on-failure
+
+  alert-handler:
+   build:
+     context: .
+     dockerfile: alert-handler/Dockerfile
+   container_name: alert-handler
+   depends_on:
+     - kafka
+     - alert-selector
+   environment:
+     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+   restart: on-failure
 
   grafana:
     image: grafana/grafana:10.3.1
