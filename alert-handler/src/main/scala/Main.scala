@@ -114,7 +114,7 @@ object Main extends App {
   
   // Consumer Setup
   val consumerProps: Properties = new Properties()
-  consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+  consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:29092")
   consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer])
   consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer])
   consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "alert-handler-group")
