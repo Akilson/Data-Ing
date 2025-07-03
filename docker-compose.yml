@@ -84,9 +84,13 @@ services:
    container_name: iot-storage
    depends_on:
      - kafka
+     - minio
      - iot-simulator
    environment:
      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+     MINIO_ENDPOINT: http://minio:9000
+     MINIO_ACCESS_KEY: minioadmin
+     MINIO_SECRET_KEY: minioadmin
    restart: on-failure
 
   grafana:
