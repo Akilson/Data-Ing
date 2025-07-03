@@ -53,7 +53,7 @@ object MinioWriter {
 
     val kafkaDf = spark.readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:9092")
+      .option("kafka.bootstrap.servers", "kafka:29092")
       .option("subscribe", "iot-events")
       .option("startingOffsets", "earliest")
       .load()
