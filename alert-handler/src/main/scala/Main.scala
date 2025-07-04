@@ -34,7 +34,7 @@ object Main extends App {
       println(s"✅ SMS sent! SID: ${message.getSid}")
     }
   }
-  SmsSender.sendSms("Alert handler started") // Initial message to confirm Twilio setup
+  // SmsSender.sendSms("Alert handler started") // Initial message to confirm Twilio setup
   object DiscordNotifierSev2 {
 
     // Replace with your Discord webhook URL
