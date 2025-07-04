@@ -48,12 +48,13 @@ object MinioWriter {
     //   .start()
     //   .awaitTermination()
     import spark.implicits._
+    val kafkaBootstrap = sys.env.getOrElse("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092")
 
     println("Initializing Kafka stream...")
 
     val kafkaDf = spark.readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:9092")
+      .option("kafka.bootstrap.servers", kafkaBootstrap)
       .option("subscribe", "iot-events")
       .option("startingOffsets", "earliest")
       .load()
@@ -97,9 +98,12 @@ object MinioWriter {
 object Main extends App {
   val config = ConfigFactory.load()
 
-  val minioEndpoint = config.getString("minio.endpoint")
-  val minioAccessKey = config.getString("minio.access-key")
-  val minioSecretKey = config.getString("minio.secret-key")
+  // val minioEndpoint = config.getString("minio.endpoint")
+  // val minioAccessKey = config.getString("minio.access-key")
+  // val minioSecretKey = config.getString("minio.secret-key")
+  val minioEndpoint = sys.env.getOrElse("MINIO_ENDPOINT", "http://localhost:9000")
+  val minioAccessKey = sys.env.getOrElse("MINIO_ACCESS_KEY", "minioadmin")
+  val minioSecretKey = sys.env.getOrElse("MINIO_SECRET_KEY", "minioadmin")
 
   val spark = SparkSession.builder()
     .appName("IoTEventWriter")
