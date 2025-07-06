@@ -22,31 +22,67 @@ object MinioWriter {
   implicit val iotEventFormat = Json.format[IoTEvent]
 
   def writeKafkaEventsToMinio(spark: SparkSession): Unit = {
-    val config = ConfigFactory.load()
-    val minioBucket = config.getString("minio.bucket")
-    val minioPath = s"s3a://$minioBucket/iot-events/"
+    // val config = ConfigFactory.load()
+    // val minioBucket = config.getString("minio.bucket")
+    // val minioPath = s"s3a://$minioBucket/iot-events/"
 
-    val kafkaDF = spark.readStream
+    // val kafkaDF = spark.readStream
+    //   .format("kafka")
+    //   .option("kafka.bootstrap.servers", config.getString("kafka.bootstrap.servers"))
+    //   .option("subscribe", config.getString("kafka.topic"))
+    //   .option("startingOffsets", "earliest")
+    //   .load()
+
+    // val jsonSchema = Encoders.product[IoTEvent].schema
+
+    // val parsedEvents = kafkaDF
+    //   .selectExpr("CAST(value AS STRING) as json")
+    //   .select(from_json(col("json"), jsonSchema).as("data"))
+    //   .select("data.*")
+
+    // parsedEvents.writeStream
+    //   .format("json")
+    //   .option("checkpointLocation", "/tmp/spark-checkpoints/iot-events") // Local temp
+    //   .option("path", minioPath)
+    //   .outputMode("append")
+    //   .start()
+    //   .awaitTermination()
+    import spark.implicits._
+
+    println("Initializing Kafka stream...")
+
+    val kafkaDf = spark.readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", config.getString("kafka.bootstrap.servers"))
-      .option("subscribe", config.getString("kafka.topic"))
-      .option("startingOffsets", "earliest")
+      .option("kafka.bootstrap.servers", "localhost:9092")
+      .option("subscribe", "drone-events")
+      .option("startingOffsets", "latest")
       .load()
 
-    val jsonSchema = Encoders.product[IoTEvent].schema
+    println("Kafka stream successfully initialized.")
 
-    val parsedEvents = kafkaDF
-      .selectExpr("CAST(value AS STRING) as json")
-      .select(from_json(col("json"), jsonSchema).as("data"))
-      .select("data.*")
+    val parsedDf = kafkaDf.selectExpr("CAST(value AS STRING)").as[String]
 
-    parsedEvents.writeStream
-      .format("json")
-      .option("checkpointLocation", "/tmp/spark-checkpoints/iot-events") // Local temp
-      .option("path", minioPath)
+    println("Starting transformation of incoming data...")
+
+    val transformedDf = parsedDf.map { json =>
+      // Replace with your own parsing logic
+      json // Assuming raw string is stored as-is for now
+    }
+
+    println("Transformation complete. Writing to MinIO...")
+
+    val query = transformedDf.writeStream
+      .format("parquet")
+      .option("path", "s3a://your-bucket/drone-data/")
+      .option("checkpointLocation", "/tmp/spark-checkpoint/")
       .outputMode("append")
       .start()
-      .awaitTermination()
+
+    println("WriteStream started successfully. Waiting for termination...")
+
+    query.awaitTermination()
+
+    println("Streaming query terminated.")
   }
 }
 
