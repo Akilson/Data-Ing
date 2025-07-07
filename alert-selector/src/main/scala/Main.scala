@@ -55,7 +55,7 @@ object Main extends App {
       val humidity = cursor.get[Double]("humidity").toOption
       (temp, level, humidity) match {
         case (Some(t), Some(l), Some(h)) => (t, l, h) match {
-          case (t, l, h) if t > 34.0 || l < 5 || h > 79 => Some(outputTopicSev1)
+          // case (t, l, h) if t > 34.0 || l < 5 || h > 79 => Some(outputTopicSev1)
           case (t, l, h) if t > 32.5 || l < 20 || h > 70 => Some(outputTopicSev2)
           case _ => Some(outputTopicSev3)
         }
