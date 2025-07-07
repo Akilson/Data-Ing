@@ -1,0 +1,26 @@
+FROM sbtscala/scala-sbt:latest
+
+WORKDIR /app
+
+# Copy project files
+COPY build.sbt .
+COPY project/ project/ 
+COPY src/ src/
+
+# Build the application
+RUN sbt clean compile
+
+# Set environment variables
+ENV MINIO_ENDPOINT=http://minio:9000
+ENV MINIO_ACCESS_KEY=minioadmin
+ENV MINIO_SECRET_KEY=minioadmin
+ENV MINIO_BUCKET=iot-events
+ENV INFLUXDB_URL=http://influxdb:8086
+ENV INFLUXDB_TOKEN=admin-token
+ENV INFLUXDB_ORG=iot-org
+ENV INFLUXDB_BUCKET=iot-analytics
+ENV GRAFANA_URL=http://grafana:3000
+ENV GRAFANA_API_KEY=admin
+
+# Run the analytics service
+CMD ["sbt", "run"]
