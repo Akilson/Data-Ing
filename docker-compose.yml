@@ -23,7 +23,6 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       # KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -86,6 +85,7 @@ services:
      - kafka
      - minio
      - iot-simulator
+     - createbucket
    environment:
      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
      MINIO_ENDPOINT: http://minio:9000
@@ -119,6 +119,8 @@ services:
     command: server /data --console-address ":9001"
     restart: on-failure
   
+  
+
   createbucket:
     image: minio/mc
     depends_on:
@@ -131,47 +133,6 @@ services:
       mc policy set public local/iot-events;
       exit 0;
       "
-
-  influxdb:
-    image: influxdb:2.7
-    container_name: influxdb
-    ports:
-      - "8086:8086"
-    environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: adminadmin        # same as <USERNAME>
-      DOCKER_INFLUXDB_INIT_PASSWORD: adminadmin        # same as <PASSWORD>
-      DOCKER_INFLUXDB_INIT_ORG: iot-org                # same as <ORG_NAME>
-      DOCKER_INFLUXDB_INIT_BUCKET: iot-analytics       # same as <BUCKET_NAME>
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-token # recommended to set
-    volumes:
-      - ./data:/var/lib/influxdb2
-      - ./config:/etc/influxdb2
-    restart: on-failure
-
-
-  # service-analytics:
-  #   build:
-  #     context: ./service-analytics
-  #     dockerfile: Dockerfile
-  #   container_name: service-analytics
-  #   depends_on:
-  #     - kafka
-  #     - minio
-  #     - influxdb
-  #     - grafana
-  #   environment:
-  #     MINIO_ENDPOINT: http://minio:9000
-  #     MINIO_ACCESS_KEY: minioadmin
-  #     MINIO_SECRET_KEY: minioadmin
-  #     MINIO_BUCKET: iot-events
-  #     INFLUXDB_URL: http://influxdb:8086
-  #     INFLUXDB_TOKEN: admin-token
-  #     INFLUXDB_ORG: iot-org
-  #     INFLUXDB_BUCKET: iot-analytics
-  #     GRAFANA_URL: http://grafana:3000
-  #     GRAFANA_API_KEY: admin
-  #   restart: on-failure
 
 volumes:
   grafana-storage:
