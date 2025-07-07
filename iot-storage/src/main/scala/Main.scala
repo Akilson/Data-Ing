@@ -75,7 +75,7 @@ object MinioWriter {
     val query = transformedDf.writeStream
       .format("json")
       .option("path", "s3a://iot-events/iot-events/")
-      .option("checkpointLocation", "/tmp/spark-checkpoint/")
+      .option("checkpointLocation", "s3a://iot-events/checkpoints/iot-events")
       .outputMode("append")
       .start()
     
