@@ -54,8 +54,8 @@ object MinioWriter {
     val kafkaDf = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "localhost:9092")
-      .option("subscribe", "drone-events")
-      .option("startingOffsets", "latest")
+      .option("subscribe", "iot-events")
+      .option("startingOffsets", "earliest")
       .load()
 
     println("Kafka stream successfully initialized.")
@@ -66,17 +66,25 @@ object MinioWriter {
 
     val transformedDf = parsedDf.map { json =>
       // Replace with your own parsing logic
+      println(s"Parsing JSON: $json")
       json // Assuming raw string is stored as-is for now
     }
 
     println("Transformation complete. Writing to MinIO...")
 
-    val query = transformedDf.writeStream
-      .format("parquet")
-      .option("path", "s3a://your-bucket/drone-data/")
-      .option("checkpointLocation", "/tmp/spark-checkpoint/")
+    // val query = transformedDf.writeStream
+    //   .format("parquet")
+    //   .option("path", "s3a://your-bucket/drone-data/")
+    //   .option("checkpointLocation", "/tmp/spark-checkpoint/")
+    //   .outputMode("append")
+    //   .start()
+    
+    val query = parsedDf.writeStream
+      .format("console")
+      .option("checkpointLocation", "/tmp/spark-checkpoint/iot-events")
       .outputMode("append")
       .start()
+
 
     println("WriteStream started successfully. Waiting for termination...")
 
