@@ -44,8 +44,8 @@ services:
 
   iot-simulator:
     build:
-      context: .
-      dockerfile: iot-simulator/Dockerfile
+      context: ./iot-simulator
+      dockerfile: Dockerfile
     container_name: iot-simulator
     depends_on:
       - kafka
@@ -55,26 +55,28 @@ services:
 
   alert-selector:
    build:
-     context: .
-     dockerfile: alert-selector/Dockerfile
+     context: ./alert-selector
+     dockerfile: Dockerfile
    container_name: alert-selector
    depends_on:
      - kafka
-     - iot-simulator
    environment:
      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
    restart: on-failure
 
   alert-handler:
    build:
-     context: .
-     dockerfile: alert-handler/Dockerfile
+     context: ./alert-handler
+     dockerfile: Dockerfile
    container_name: alert-handler
    depends_on:
      - kafka
-     - alert-selector
    environment:
      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+     TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+     TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+     TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+     RECIPIENT_PHONE_NUMBER: ${RECIPIENT_PHONE_NUMBER}
    restart: on-failure
 
   grafana:
