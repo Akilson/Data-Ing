@@ -1,6 +1,8 @@
 name := "service-analytics"
 fork := true
 
+ThisBuild / scalaVersion := "2.13.14"
+
 
 javaOptions ++= Seq(
   "-XX:+IgnoreUnrecognizedVMOptions",
