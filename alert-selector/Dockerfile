@@ -1,11 +1,11 @@
-FROM hseeberger/scala-sbt:graalvm-ce-21.3.0-java17_1.6.2_3.1.1
+# Use any lightweight JDK image
+FROM openjdk:17-slim
 
+# Create app directory
 WORKDIR /app
 
-COPY . .
+# Copy your fat JAR into the container
+COPY target/scala-2.13/alert-selector.jar alert-selector.jar
 
-# Build the application
-RUN sbt clean compile
-
-# Run the application
-CMD ["sbt", "run"]
+# Run the JAR
+CMD ["java", "-jar", "alert-selector.jar"]

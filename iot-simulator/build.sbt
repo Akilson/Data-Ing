@@ -1,5 +1,14 @@
 name := "iot-simulator"
 
+assembly / assemblyJarName := "iot-storage.jar"
+mainClass in assembly := Some("Main")
+
+// Optionally: Merge strategy for duplicate files (especially META-INF issues)
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
+
 // Specify the main class
 Compile / mainClass := Some("Main")
 ThisBuild / scalaVersion := "2.13.14"

@@ -93,18 +93,6 @@ services:
      MINIO_SECRET_KEY: minioadmin
    restart: on-failure
 
-  grafana:
-    image: grafana/grafana:10.3.1
-    container_name: grafana
-    ports:
-      - "3001:3001"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_INSTALL_PLUGINS: grafana-worldmap-panel,grafana-piechart-panel
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    restart: on-failure
-
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -119,8 +107,6 @@ services:
     command: server /data --console-address ":9001"
     restart: on-failure
   
-  
-
   createbucket:
     image: minio/mc
     depends_on:
@@ -135,9 +121,5 @@ services:
       "
 
 volumes:
-  grafana-storage:
-    driver: local
   minio-storage:
-    driver: local
-  influxdb:
     driver: local
