@@ -2,6 +2,7 @@ name := "iot-simulator"
 
 // Specify the main class
 Compile / mainClass := Some("Main")
+ThisBuild / scalaVersion := "2.13.14"
 
 libraryDependencies ++= Seq(
   "org.apache.kafka" % "kafka-clients" % "3.6.1",     // Kafka client
@@ -11,7 +12,4 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-streaming-kafka-0-10" % "3.4.1", // Spark Streaming Kafka integration
   "com.typesafe.play" %% "play-json" % "2.9.4",       // JSON support
   "com.typesafe" % "config" % "1.4.3",                 // Config support 
-  // "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5", // Logging support
-  // "ch.qos.logback" % "logback-classic" % "1.4.11" // Logback for logging
-  
 )
