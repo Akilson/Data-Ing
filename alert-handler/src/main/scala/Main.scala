@@ -38,7 +38,7 @@ object Main extends App {
   object DiscordNotifierSev2 {
 
     // Replace with your Discord webhook URL
-    val webhookUrl = "https://discord.com/api/webhooks/1389656695256514560/VvkjoM-EhZ9QFxIVIYrzrnY2X2aR-UjDzHmKbOG4p130thgGxr4suK1MAe-Qhb0-CNx9"
+    val webhookUrl = ""
 
     case class DiscordMessage(content: String)
 
